@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>자소서핏 · AI 자기소개서 첨삭</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // 전체 색상 체계: 잉크 네이비 + 샴페인 골드 + 웜 그레이
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          indigo: { 50:'#f3f4f8',100:'#e5e7f0',200:'#c8cce0',300:'#a1a8c6',400:'#6d76a0',500:'#454e7d',600:'#2a3160',700:'#1f2550',800:'#181d3a',900:'#10132a',950:'#0a0c1c' },
+          slate:  { 50:'#fafaf8',100:'#f4f2ee',200:'#e7e2d8',300:'#d6d0c4',400:'#a8a196',500:'#7a7368',600:'#5a544b',700:'#433e37',800:'#2a2723',900:'#1b1916',950:'#0f0e0c' },
+          gold:   { 50:'#fbf8f1',100:'#f5ecd9',200:'#ebd8b0',300:'#dec083',400:'#cfa55d',500:'#b88a3e',600:'#9b7033',700:'#7c582b',800:'#5e4322',900:'#3f2d17' }
+        },
+        fontFamily: { display: ['"Noto Serif KR"', 'serif'] }
+      }
+    }
+  };
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700;900&display=swap" />
+<style>
+  :root { --ink:#181d3a; --ink2:#2a3160; --gold:#b88a3e; --gold-l:#dec083; --line:#e7e2d8; --paper:#f8f6f1; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: Pretendard, system-ui, sans-serif; letter-spacing: -0.01em; -webkit-font-smoothing: antialiased;
+    background: var(--paper) !important;
+    background-image:
+      radial-gradient(1100px 520px at 90% -8%, rgba(184,138,62,.11), transparent 60%),
+      radial-gradient(900px 520px at -10% 12%, rgba(42,49,96,.07), transparent 60%) !important;
+    background-attachment: fixed !important;
+  }
+  ::selection { background: rgba(184,138,62,.25); }
+  h1, h2, .font-display { font-family: "Noto Serif KR", serif; letter-spacing: -0.02em; }
+
+  /* 하이라이트 */
+  mark.hl { padding: 1px 3px; border-radius: 5px; cursor: pointer; transition: .15s; }
+  mark.hl sup { font-size: 10px; font-weight: 700; margin-left: 2px; }
+  mark.hl-high { background: #fbe4e1; color: #8f2a22; box-shadow: inset 0 -2px 0 #e9a59c; }
+  mark.hl-mid  { background: #f7ecd5; color: #7c582b; box-shadow: inset 0 -2px 0 #dec083; }
+  mark.hl-low  { background: #e6ebf5; color: #2a3160; box-shadow: inset 0 -2px 0 #a1a8c6; }
+  mark.hl:hover { filter: brightness(.95); }
+  .flash { animation: flash 1.2s ease; }
+  @keyframes flash { 0%,100% { box-shadow: 0 0 0 0 rgba(184,138,62,0); } 30% { box-shadow: 0 0 0 4px rgba(184,138,62,.45); } }
+
+  /* 탭·공급사 버튼 활성 */
+  .tab-btn.active, .pbtn.active, .rtab.active {
+    background: linear-gradient(135deg, #2f3768, #161a33) !important; color: #fff !important;
+    border-color: #161a33 !important; box-shadow: 0 6px 16px -8px rgba(24,29,58,.6), inset 0 0 0 1px rgba(222,192,131,.35);
+  }
+  .score-ring { background: conic-gradient(var(--c) calc(var(--p) * 1%), #ece8e0 0); }
+  .fade-in { animation: fade .45s cubic-bezier(.2,.7,.2,1); }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .spinner { border: 3px solid #ece8e0; border-top-color: var(--gold); border-radius: 50%; width: 42px; height: 42px; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 카드 공통 */
+  .bg-white.rounded-2xl.border:not(.border-dashed) {
+    border-color: var(--line) !important; border-radius: 22px !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 24px 48px -28px rgba(24,29,58,.22), 0 2px 6px -3px rgba(24,29,58,.06);
+  }
+  .border-dashed.rounded-2xl { border-radius: 22px !important; border-color: #d6d0c4 !important; background: rgba(255,255,255,.6) !important; }
+
+  /* 입력 요소 */
+  input:not([type=checkbox]):not([type=radio]), textarea, select {
+    border: 1px solid var(--line) !important; background-color: #fffdf9 !important; border-radius: 12px !important;
+    transition: border-color .15s, box-shadow .15s, background-color .15s;
+  }
+  input:not([type=checkbox]):not([type=radio]):focus, textarea:focus, select:focus {
+    outline: none !important; border-color: var(--gold) !important; background-color: #fff !important;
+    box-shadow: 0 0 0 4px rgba(184,138,62,.14) !important;
+  }
+  #limit { border-radius: 8px !important; }
+  input[type=checkbox] { accent-color: var(--ink); }
+  input::placeholder, textarea::placeholder { color: #b3aca0; }
+
+  /* 주요 버튼 */
+  .btn-primary, .bg-indigo-600 { background-image: linear-gradient(135deg, #343d72 0%, #181d3a 100%) !important; }
+  .btn-primary {
+    color: #fff; border: 1px solid rgba(222,192,131,.4);
+    box-shadow: 0 16px 32px -14px rgba(24,29,58,.65), inset 0 1px 0 rgba(255,255,255,.14);
+    transition: transform .15s, box-shadow .15s, filter .15s; position: relative; overflow: hidden;
+  }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.08); box-shadow: 0 20px 36px -14px rgba(24,29,58,.7), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn-primary::after {
+    content: ""; position: absolute; inset: 0; transform: translateX(-120%);
+    background: linear-gradient(100deg, transparent 30%, rgba(222,192,131,.28) 50%, transparent 70%);
+    transition: transform .8s ease;
+  }
+  .btn-primary:hover:not(:disabled)::after { transform: translateX(120%); }
+
+  /* 헤더 로고 */
+  .logo-mark {
+    width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    background: linear-gradient(140deg, #2f3768, #10132a); color: var(--gold-l);
+    font-family: "Noto Serif KR", serif; font-weight: 900; font-size: 18px;
+    box-shadow: inset 0 0 0 1px rgba(222,192,131,.45), 0 8px 18px -10px rgba(16,19,42,.8);
+  }
+
+  /* 히어로 */
+  .hero {
+    background:
+      radial-gradient(600px 320px at 88% 10%, rgba(222,192,131,.22), transparent 65%),
+      radial-gradient(500px 300px at 0% 100%, rgba(84,96,170,.35), transparent 70%),
+      linear-gradient(140deg, #1d2346 0%, #10132a 70%);
+    box-shadow: 0 30px 60px -30px rgba(16,19,42,.6), inset 0 0 0 1px rgba(222,192,131,.18);
+  }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; opacity: .5; pointer-events: none;
+    background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at 70% 30%, #000 20%, transparent 75%);
+  }
+  .hero-mark {
+    position: absolute; right: -10px; bottom: -70px; font-family: "Noto Serif KR", serif; font-weight: 900;
+    font-size: 300px; line-height: 1; color: transparent; -webkit-text-stroke: 1px rgba(222,192,131,.22); pointer-events: none; user-select: none;
+  }
+  .gold-text { background: linear-gradient(100deg, #f3dfae, #cfa55d 45%, #f5e4bb 70%, #b88a3e); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .pill { font-size: 12px; padding: 7px 13px; border-radius: 999px; color: rgba(255,255,255,.82); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(6px); }
+  .pill b { color: var(--gold-l); font-weight: 700; margin-right: 4px; }
+
+  /* 입력 패널 */
+  .step { font-family: Pretendard, sans-serif; font-size: 10px; font-weight: 800; letter-spacing: .08em; color: var(--gold); border: 1px solid rgba(184,138,62,.45); border-radius: 999px; padding: 2px 7px; }
+  .lbl { font-size: 11.5px; font-weight: 600; color: #7a7368; letter-spacing: .01em; }
+  .api-box { background: linear-gradient(180deg, #fffdf8, #faf6ec); border: 1px solid #ebd8b0; box-shadow: inset 0 1px 0 #fff; }
+  .hairline { height: 1px; background: linear-gradient(90deg, transparent, var(--line) 15%, var(--line) 85%, transparent); }
+  .opt { transition: border-color .15s, background-color .15s, box-shadow .15s; }
+  .peer:checked + .opt { border-color: var(--gold) !important; background: #fbf8f1 !important; box-shadow: 0 0 0 3px rgba(184,138,62,.12); }
+  .peer:checked + .opt .opt-dot { background: var(--gold); box-shadow: inset 0 0 0 3px #fbf8f1; border-color: var(--gold); }
+  .opt-dot { width: 14px; height: 14px; border-radius: 999px; border: 1.5px solid #d6d0c4; transition: .15s; flex-shrink: 0; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #d6d0c4; border-radius: 999px; border: 2px solid var(--paper); }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<!-- ================= HEADER ================= -->
+<header class="sticky top-0 z-30 bg-[#f8f6f1]/80 backdrop-blur-xl border-b border-slate-200/80">
+  <div class="max-w-7xl mx-auto px-5 h-[68px] flex items-center justify-between">
+    <a href="#" class="flex items-center gap-3">
+      <div class="logo-mark">핏</div>
+      <div>
+        <div class="font-display font-bold text-[19px] leading-none text-indigo-800">자소서핏</div>
+        <div class="text-[9.5px] tracking-[.24em] text-gold-600 mt-1.5 font-bold">AI COVER LETTER ATELIER</div>
+      </div>
+    </a>
+    <nav class="flex items-center gap-2">
+      <span id="modeBadge" class="text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-100 text-amber-700">데모 모드</span>
+      <a href="#history" class="text-sm px-4 py-2 rounded-full border border-slate-200 bg-white/70 hover:bg-white hover:border-gold-300 font-semibold text-slate-700 transition">첨삭 기록</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="max-w-7xl mx-auto px-5 pt-8 pb-7">
+  <div class="hero relative overflow-hidden rounded-[28px] px-7 py-10 md:px-12 md:py-14 text-white">
+    <div class="hero-mark hidden md:block">핏</div>
+    <div class="relative z-10 max-w-3xl">
+      <div class="inline-flex items-center gap-2 text-[10.5px] tracking-[.28em] font-bold text-gold-300 border border-gold-300/30 bg-white/5 rounded-full px-3.5 py-1.5">✦ PREMIUM AI EDITING</div>
+      <h1 class="mt-5 text-[30px] md:text-[44px] leading-[1.3] font-bold">붙여 넣기만 하면,<br /><span class="gold-text">인사담당자의 시선</span>으로 첨삭합니다</h1>
+      <p class="mt-4 text-[15px] text-white/65 leading-relaxed max-w-2xl">최신 AI 모델이 문장 하나하나를 읽고 구조를 진단한 뒤, 제한 글자 수에 꼭 맞춘 수정본까지 제안합니다.</p>
+      <div class="mt-7 flex flex-wrap gap-2">
+        <span class="pill"><b>01</b>5개 항목 정밀 채점</span>
+        <span class="pill"><b>02</b>문장별 피드백</span>
+        <span class="pill"><b>03</b>STAR 구조 분석</span>
+        <span class="pill"><b>04</b>글자 수 맞춤 수정본</span>
+        <span class="pill"><b>05</b>면접 예상질문</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MAIN ================= -->
+<main class="max-w-7xl mx-auto px-5 pb-14 grid lg:grid-cols-5 gap-6">
+  <!-- INPUT -->
+  <section class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 h-fit lg:sticky lg:top-24">
+
+    <!-- AI 연결 -->
+    <div class="api-box rounded-2xl p-4 mb-6">
+      <div class="flex items-center justify-between">
+        <h2 class="font-bold text-[15px] flex items-center gap-2 text-indigo-800"><span class="step">01</span>AI 연결</h2>
+        <span id="aiStatus" class="text-[11px] font-semibold text-slate-500">미연결</span>
+      </div>
+      <div class="grid grid-cols-3 gap-1.5 mt-3.5">
+        <button type="button" data-p="openai" class="pbtn border border-slate-200 rounded-xl py-2 text-xs font-bold bg-white text-slate-600 hover:border-gold-400 transition">OpenAI</button>
+        <button type="button" data-p="claude" class="pbtn border border-slate-200 rounded-xl py-2 text-xs font-bold bg-white text-slate-600 hover:border-gold-400 transition">Claude</button>
+        <button type="button" data-p="gemini" class="pbtn border border-slate-200 rounded-xl py-2 text-xs font-bold bg-white text-slate-600 hover:border-gold-400 transition">Gemini</button>
+      </div>
+      <div class="mt-3 relative">
+        <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="API 키를 붙여 넣으세요" class="w-full pl-3.5 pr-14 py-2.5 text-sm font-mono" />
+        <button id="toggleKey" type="button" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 hover:text-indigo-800 px-1">보기</button>
+      </div>
+      <div class="mt-2 flex gap-2">
+        <input id="model" list="modelList" autocomplete="off" spellcheck="false" placeholder="모델명" class="flex-1 min-w-0 px-3 py-2 text-sm font-mono" />
+        <datalist id="modelList"></datalist>
+        <button id="testBtn" type="button" onclick="testConnection(false)" class="px-4 py-2 rounded-xl bg-indigo-800 hover:bg-indigo-700 text-gold-100 text-sm font-semibold whitespace-nowrap transition disabled:opacity-50">연결 확인</button>
+      </div>
+      <div class="flex items-center justify-between mt-2.5 text-[11px] text-slate-500">
+        <div class="flex items-center gap-3">
+          <label class="flex items-center gap-1.5 cursor-pointer"><input id="remember" type="checkbox" checked /> 이 브라우저에 키 저장</label>
+          <button type="button" onclick="clearKey()" class="hover:text-rose-600">키 삭제</button>
+        </div>
+        <a id="keyLink" target="_blank" rel="noopener" class="text-gold-700 font-semibold hover:underline underline-offset-2">API 키 발급 →</a>
+      </div>
+      <p id="aiMsg" class="text-[11px] mt-2 leading-relaxed text-slate-500"></p>
+    </div>
+
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-bold text-[17px] flex items-center gap-2 text-indigo-800"><span class="step">02</span>자기소개서</h2>
+      <button onclick="fillSample()" class="text-xs text-gold-700 font-semibold border border-gold-200 bg-gold-50 hover:bg-gold-100 rounded-full px-3 py-1 transition">예시 불러오기</button>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <label class="block">
+        <span class="lbl">지원 회사</span>
+        <input id="company" class="mt-1.5 w-full px-3.5 py-2.5 text-sm" placeholder="예) 한빛전자" />
+      </label>
+      <label class="block">
+        <span class="lbl">지원 직무</span>
+        <input id="job" class="mt-1.5 w-full px-3.5 py-2.5 text-sm" placeholder="예) 마케팅" />
+      </label>
+    </div>
+    <label class="block mt-3.5">
+      <span class="lbl">자소서 문항</span>
+      <input id="question" class="mt-1.5 w-full px-3.5 py-2.5 text-sm" placeholder="예) 지원 동기와 입사 후 포부를 기술해 주십시오." />
+    </label>
+    <div class="mt-3.5">
+      <div class="flex items-end justify-between">
+        <span class="lbl">답변 내용</span>
+        <label class="text-xs text-slate-500 flex items-center gap-1.5">제한
+          <input id="limit" type="number" value="800" min="100" step="50" class="w-20 px-2 py-0.5 text-right text-sm" />자
+        </label>
+      </div>
+      <textarea id="essay" rows="12" class="mt-1.5 w-full px-4 py-3 text-[14px] leading-[1.85] resize-y" placeholder="자기소개서 답변을 붙여 넣으세요. (최소 100자 · Ctrl+Enter로 바로 첨삭)"></textarea>
+      <div class="mt-1.5">
+        <div class="h-1 bg-slate-100 rounded-full overflow-hidden"><div id="limitBar" class="h-full bg-indigo-500 transition-all" style="width:0%"></div></div>
+        <div class="flex justify-between text-[11px] text-slate-500 mt-1.5 tabular-nums">
+          <span>공백 포함 <b id="cntWith" class="text-slate-800">0</b>자 · 공백 제외 <b id="cntWithout" class="text-slate-800">0</b>자</span>
+          <span><b id="cntBytes" class="text-slate-800">0</b> byte</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hairline my-6"></div>
+
+    <div>
+      <h2 class="font-bold text-[15px] flex items-center gap-2 text-indigo-800 mb-3"><span class="step">03</span>첨삭 유형</h2>
+      <div class="grid grid-cols-2 gap-2.5">
+        <label class="cursor-pointer">
+          <input type="radio" name="mode" value="basic" class="peer hidden" checked />
+          <div class="opt border border-slate-200 bg-white rounded-2xl p-3.5">
+            <div class="flex items-center justify-between">
+              <div class="font-bold text-sm text-indigo-800">기본 첨삭</div><span class="opt-dot"></span>
+            </div>
+            <div class="text-[11px] text-slate-500 mt-1">점수 · 문장 피드백 · 수정본</div>
+          </div>
+        </label>
+        <label class="cursor-pointer">
+          <input type="radio" name="mode" value="deep" class="peer hidden" />
+          <div class="opt border border-slate-200 bg-white rounded-2xl p-3.5">
+            <div class="flex items-center justify-between">
+              <div class="font-bold text-sm text-indigo-800">심화 첨삭 <span class="text-[10px] font-bold text-gold-600 align-middle ml-0.5">PRO</span></div><span class="opt-dot"></span>
+            </div>
+            <div class="text-[11px] text-slate-500 mt-1">+ 면접 예상질문 5개</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <button id="analyzeBtn" onclick="analyze()" class="btn-primary mt-6 w-full py-4 rounded-2xl font-bold tracking-wide disabled:opacity-50">
+      AI 첨삭 받기
+    </button>
+    <p class="text-[11px] text-slate-400 mt-3 text-center">🔒 API 키와 글은 서버를 거치지 않고 선택한 AI 회사로 직접 전송됩니다.</p>
+  </section>
+
+  <!-- RESULT -->
+  <section class="lg:col-span-3">
+    <div id="emptyState" class="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center">
+      <div class="text-5xl">📝</div>
+      <h3 class="font-bold text-lg mt-3">아직 첨삭 결과가 없어요</h3>
+      <p class="text-slate-500 text-sm mt-1">① 왼쪽 위에 <b>API 키</b>를 붙여 넣고 ② 자소서를 입력한 뒤 ③ <b>AI 첨삭 받기</b>를 눌러 주세요.</p>
+      <div class="grid sm:grid-cols-3 gap-3 mt-6 text-left">
+        <div class="bg-slate-50 rounded-xl p-4"><div class="text-xl">🎯</div><div class="font-semibold text-sm mt-1">5개 항목 점수</div><div class="text-xs text-slate-500">구조·구체성·직무적합·문장력·진정성</div></div>
+        <div class="bg-slate-50 rounded-xl p-4"><div class="text-xl">🔍</div><div class="font-semibold text-sm mt-1">문장별 하이라이트</div><div class="text-xs text-slate-500">문제 문장을 클릭하면 피드백으로 이동</div></div>
+        <div class="bg-slate-50 rounded-xl p-4"><div class="text-xl">✨</div><div class="font-semibold text-sm mt-1">글자 수 맞춤 수정본</div><div class="text-xs text-slate-500">복사 또는 원문에 바로 반영</div></div>
+      </div>
+    </div>
+
+    <div id="loadingState" class="hidden bg-white rounded-2xl border border-slate-200 p-12 text-center">
+      <div class="spinner mx-auto"></div>
+      <div id="loadingText" class="mt-4 font-semibold text-indigo-700">문항 의도 분석 중…</div>
+      <div class="text-xs text-slate-400 mt-1">모델에 따라 10~60초 정도 걸립니다.</div>
+    </div>
+
+    <div id="resultState" class="hidden space-y-5"></div>
+  </section>
+</main>
+
+<!-- ================= HISTORY ================= -->
+<section id="history" class="max-w-7xl mx-auto px-4 pb-12">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xl font-extrabold">🗂 첨삭 기록</h2>
+    <button onclick="clearHistory()" class="text-xs text-slate-400 hover:text-rose-500">전체 삭제</button>
+  </div>
+  <div id="historyList" class="bg-white rounded-2xl border border-slate-200 divide-y overflow-hidden"></div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="border-t border-slate-200 bg-white">
+  <div class="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-4 items-center justify-between text-sm">
+    <div class="text-slate-500">© 자소서핏 · 누구나 좋은 첨삭을 받을 수 있도록</div>
+    <div class="flex gap-2">
+      <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">SDG 4 · 양질의 교육</span>
+      <span class="px-3 py-1 rounded-full bg-rose-100 text-rose-800 text-xs font-bold">SDG 8 · 양질의 일자리</span>
+    </div>
+  </div>
+</footer>
+
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden max-w-[90vw] px-4 py-3 rounded-xl bg-slate-900 text-white text-sm shadow-xl"></div>
+
+<script>
+/* ============ 기본 ============ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const PROVIDERS = {
+  openai: { name: 'OpenAI', model: 'gpt-4.1-mini', ph: 'sk-...', link: 'https://platform.openai.com/api-keys' },
+  claude: { name: 'Claude', model: 'claude-sonnet-4-5', ph: 'sk-ant-...', link: 'https://console.anthropic.com/settings/keys' },
+  gemini: { name: 'Gemini', model: 'gemini-2.5-flash', ph: 'AIza...', link: 'https://aistudio.google.com/app/apikey' }
+};
+const SCORE_LABELS = { structure: '구조', specificity: '구체성', jobFit: '직무 적합', writing: '문장력', authenticity: '진정성' };
+const STAR_LABELS = ['상황', '과제', '행동', '결과'];
+const SEV = { high: ['높음', 'bg-rose-100 text-rose-700'], mid: ['보통', 'bg-amber-100 text-amber-700'], low: ['낮음', 'bg-sky-100 text-sky-700'] };
+const SEV_ALIAS = { '높음': 'high', '보통': 'mid', '중간': 'mid', medium: 'mid', '낮음': 'low' };
+const LS = { ai: 'jsf_ai_v2', hist: 'jsf_history_v2' };
+const DEFAULT_MSG = 'API 키를 붙여 넣으면 OpenAI·Claude·Gemini를 자동으로 인식하고 연결을 확인합니다. 키가 없으면 규칙 기반 데모로 동작합니다.';
+
+let ai = loadAI();
+let records = (() => { try { return JSON.parse(localStorage.getItem(LS.hist) || '[]'); } catch { return []; } })();
+let currentResult = null;
+const verified = {};
+
+function toast(msg, ms = 2600) {
+  const t = $('#toast'); t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add('hidden'), ms);
+}
+function showState(id) {
+  ['emptyState', 'loadingState', 'resultState'].forEach(x => $('#' + x).classList.toggle('hidden', x !== id));
+}
+const grade = s => s >= 90 ? 'S' : s >= 80 ? 'A' : s >= 70 ? 'B' : s >= 60 ? 'C' : 'D';
+const scoreColor = s => s >= 80 ? '#10b981' : s >= 60 ? '#f59e0b' : '#ef4444';
+function saveHistory() {
+  try { localStorage.setItem(LS.hist, JSON.stringify(records)); }
+  catch { records = records.slice(0, 10); localStorage.setItem(LS.hist, JSON.stringify(records)); }
+}
+
+/* ============ AI 설정 ============ */
+function loadAI() {
+  const base = { provider: 'openai', keys: {}, models: {}, remember: true };
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS.ai) || 'null') || JSON.parse(sessionStorage.getItem(LS.ai) || 'null');
+    return Object.assign(base, saved || {});
+  } catch { return base; }
+}
+function saveAI() {
+  const data = JSON.stringify(ai);
+  if (ai.remember) { localStorage.setItem(LS.ai, data); sessionStorage.removeItem(LS.ai); }
+  else { sessionStorage.setItem(LS.ai, data); localStorage.removeItem(LS.ai); }
+}
+const curKey = () => (ai.keys[ai.provider] || '').trim();
+const curModel = () => (ai.models[ai.provider] || PROVIDERS[ai.provider].model).trim().replace(/^models\//, '');
+const isLive = () => !!curKey();
+
+function detectProvider(k) {
+  if (/^sk-ant-/.test(k)) return 'claude';
+  if (/^AIza/.test(k)) return 'gemini';
+  if (/^sk-/.test(k)) return 'openai';
+  return null;
+}
+function setAIMsg(msg, type) {
+  const m = $('#aiMsg'); m.textContent = msg;
+  m.className = 'text-[11px] mt-2 leading-relaxed ' + (type === 'ok' ? 'text-emerald-600 font-semibold' : type === 'err' ? 'text-rose-600 font-semibold' : 'text-slate-500');
+}
+function updateBadge() {
+  const live = isLive(), p = PROVIDERS[ai.provider];
+  const b = $('#modeBadge');
+  b.textContent = live ? `${p.name} 연결` : '데모 모드';
+  b.className = 'text-xs px-2.5 py-1 rounded-full font-semibold ' + (live ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700');
+  const s = $('#aiStatus');
+  s.textContent = !live ? '미연결' : verified[ai.provider] === true ? '✅ 연결됨' : verified[ai.provider] === false ? '⚠️ 확인 필요' : '키 입력됨';
+  s.className = 'text-[11px] font-semibold ' + (!live ? 'text-slate-400' : verified[ai.provider] === true ? 'text-emerald-600' : verified[ai.provider] === false ? 'text-rose-500' : 'text-indigo-600');
+}
+function renderAI() {
+  const p = PROVIDERS[ai.provider];
+  document.querySelectorAll('.pbtn').forEach(b => b.classList.toggle('active', b.dataset.p === ai.provider));
+  $('#apiKey').value = ai.keys[ai.provider] || '';
+  $('#apiKey').placeholder = `${p.name} API 키 붙여 넣기 (${p.ph})`;
+  $('#model').value = ai.models[ai.provider] || p.model;
+  $('#modelList').innerHTML = '';
+  $('#keyLink').href = p.link;
+  $('#keyLink').textContent = `${p.name} 키 발급 →`;
+  $('#remember').checked = ai.remember;
+  updateBadge();
+}
+
+document.querySelectorAll('.pbtn').forEach(b => b.addEventListener('click', () => {
+  ai.provider = b.dataset.p; saveAI(); renderAI();
+  if (isLive() && verified[ai.provider] === undefined) testConnection(true);
+  else setAIMsg(isLive() ? `${PROVIDERS[ai.provider].name} 키가 저장되어 있습니다.` : DEFAULT_MSG);
+}));
+let testTimer;
+$('#apiKey').addEventListener('input', e => {
+  const k = e.target.value.trim();
+  const d = detectProvider(k);
+  if (d && d !== ai.provider) {
+    ai.provider = d; ai.keys[d] = k; saveAI(); renderAI();
+    toast(`${PROVIDERS[d].name} 키로 인식했습니다.`);
+  } else { ai.keys[ai.provider] = k; saveAI(); }
+  delete verified[ai.provider]; updateBadge();
+  clearTimeout(testTimer);
+  if (k.length > 20) { setAIMsg('키 확인 중…'); testTimer = setTimeout(() => testConnection(true), 700); }
+  else setAIMsg(DEFAULT_MSG);
+});
+$('#model').addEventListener('input', e => { ai.models[ai.provider] = e.target.value.trim(); saveAI(); });
+$('#remember').addEventListener('change', e => { ai.remember = e.target.checked; saveAI(); toast(ai.remember ? '키를 이 브라우저에 저장합니다.' : '탭을 닫으면 키가 지워집니다.'); });
+$('#toggleKey').addEventListener('click', () => {
+  const i = $('#apiKey'); const show = i.type === 'password';
+  i.type = show ? 'text' : 'password'; $('#toggleKey').textContent = show ? '숨김' : '보기';
+});
+function clearKey() {
+  delete ai.keys[ai.provider]; delete verified[ai.provider]; saveAI(); renderAI();
+  setAIMsg(DEFAULT_MSG); toast('키를 삭제했습니다.');
+}
+
+/* ============ AI 호출 ============ */
+const claudeHeaders = key => ({
+  'content-type': 'application/json', 'x-api-key': key,
+  'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'
+});
+async function apiFetch(url, opts = {}) {
+  let res;
+  try { res = await fetch(url, opts); }
+  catch { throw new Error('네트워크 오류입니다. 인터넷 연결 또는 광고 차단 확장 프로그램을 확인해 주세요.'); }
+  const raw = await res.text();
+  let data = null; try { data = JSON.parse(raw); } catch {}
+  if (!res.ok) {
+    const detail = data?.error?.message || data?.message || raw.slice(0, 200) || res.statusText;
+    const hint = {
+      400: '요청 형식·모델명 또는 API 키를 확인하세요.', 401: 'API 키가 올바르지 않습니다.', 403: '이 키에 사용 권한이 없습니다.',
+      404: '모델명을 찾을 수 없습니다. "연결 확인"을 눌러 사용 가능한 모델을 고르세요.', 429: '사용 한도 초과 또는 결제 수단(크레딧) 미등록 상태입니다.',
+      500: 'AI 서버 오류입니다. 잠시 후 다시 시도하세요.', 503: 'AI 서버가 혼잡합니다. 잠시 후 다시 시도하세요.', 529: 'AI 서버가 혼잡합니다. 잠시 후 다시 시도하세요.'
+    }[res.status] || '';
+    throw new Error(`[${res.status}] ${hint} (${detail})`);
+  }
+  return data;
+}
+
+async function listModels(p, key) {
+  if (p === 'openai') {
+    const d = await apiFetch('https://api.openai.com/v1/models', { headers: { Authorization: 'Bearer ' + key } });
+    return (d.data || []).map(m => m.id)
+      .filter(id => /^(gpt|o\d|chatgpt)/.test(id) && !/(audio|realtime|tts|transcribe|image|search|instruct|embedding)/.test(id)).sort();
+  }
+  if (p === 'claude') {
+    const d = await apiFetch('https://api.anthropic.com/v1/models?limit=100', { headers: claudeHeaders(key) });
+    return (d.data || []).map(m => m.id);
+  }
+  const d = await apiFetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${encodeURIComponent(key)}`);
+  return (d.models || [])
+    .filter(m => (m.supportedGenerationMethods || []).includes('generateContent') && /gemini/.test(m.name) && !/(embedding|image|tts|audio|live)/.test(m.name))
+    .map(m => m.name.replace(/^models\//, ''));
+}
+function pickModel(p, list) {
+  const prefs = {
+    openai: [/^gpt-[\d.]+-mini$/, /^gpt-[\d.]+$/, /^gpt/],
+    claude: [/sonnet/, /haiku/, /opus/],
+    gemini: [/^gemini-[\d.]+-flash$/, /^gemini-[\d.]+-pro$/, /flash/]
+  }[p];
+  for (const re of prefs) {
+    const m = list.filter(x => re.test(x));
+    if (p !== 'claude') m.sort((a, b) => b.localeCompare(a, 'en', { numeric: true }));
+    if (m.length) return m[0];
+  }
+  return list[0];
+}
+async function testConnection(silent) {
+  const p = ai.provider, key = curKey();
+  if (!key) { setAIMsg('API 키를 먼저 붙여 넣어 주세요.', 'err'); return false; }
+  const btn = $('#testBtn'); btn.disabled = true; btn.textContent = '확인 중…';
+  try {
+    const models = await listModels(p, key);
+    if (p !== ai.provider || key !== curKey()) return false;
+    $('#modelList').innerHTML = models.map(m => `<option value="${esc(m)}"></option>`).join('');
+    if (models.length && !models.includes(curModel())) {
+      ai.models[p] = pickModel(p, models); $('#model').value = ai.models[p]; saveAI();
+    }
+    verified[p] = true;
+    setAIMsg(`✅ 연결 성공! 사용 가능한 모델 ${models.length}개 · 현재 모델: ${curModel()} (모델 칸을 눌러 변경 가능)`, 'ok');
+    if (!silent) toast(`${PROVIDERS[p].name} 연결 성공`);
+    return true;
+  } catch (e) {
+    if (p === ai.provider) { verified[p] = false; setAIMsg('❌ ' + e.message, 'err'); }
+    return false;
+  } finally { btn.disabled = false; btn.textContent = '연결 확인'; updateBadge(); }
+}
+
+async function callAI(system, user, json = true) {
+  const p = ai.provider, key = curKey(), model = curModel();
+  if (p === 'openai') {
+    const body = { model, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] };
+    if (json) body.response_format = { type: 'json_object' };
+    const d = await apiFetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key }, body: JSON.stringify(body)
+    });
+    return d.choices?.[0]?.message?.content || '';
+  }
+  if (p === 'claude') {
+    const d = await apiFetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: claudeHeaders(key),
+      body: JSON.stringify({ model, max_tokens: 8000, system, messages: [{ role: 'user', content: user }] })
+    });
+    return (d.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+  }
+  const d = await apiFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: 'user', parts: [{ text: user }] }],
+      generationConfig: json ? { responseMimeType: 'application/json' } : {}
+    })
+  });
+  const c = d.candidates?.[0];
+  if (!c) throw new Error('Gemini가 응답을 차단했습니다. ' + (d.promptFeedback?.blockReason || ''));
+  return (c.content?.parts || []).filter(x => !x.thought).map(x => x.text || '').join('');
+}
+function parseJSON(t) {
+  t = String(t || '').replace(/```(?:json)?/gi, '').trim();
+  try { return JSON.parse(t); } catch {}
+  const s = t.indexOf('{'), e = t.lastIndexOf('}');
+  if (s >= 0 && e > s) { try { return JSON.parse(t.slice(s, e + 1)); } catch {} }
+  throw new Error('AI 응답을 해석하지 못했습니다. 다시 시도하거나 다른 모델을 선택해 주세요.');
+}
+
+/* ============ 프롬프트 ============ */
+function buildPrompt(meta, deep) {
+  const system = '당신은 대기업·공기업 인사담당자 출신의 15년 차 자기소개서 첨삭 전문가입니다. 지원자의 글을 냉정하지만 건설적으로 평가하고, 반드시 JSON 객체 하나만 출력합니다. 마크다운·코드블록·부가 설명은 절대 쓰지 않습니다.';
+  const schema = {
+    total: 0,
+    scores: { structure: 0, specificity: 0, jobFit: 0, writing: 0, authenticity: 0 },
+    summary: '총평 2~3문장',
+    strengths: ['잘한 점'],
+    improvements: ['개선할 점'],
+    sentences: [{ original: '원문 문장 그대로', issue: '문제 유형(10자 이내)', severity: 'high', suggestion: '고친 문장', reason: '고쳐야 하는 이유' }],
+    star: STAR_LABELS.map((label, i) => ({ key: 'STAR'[i], label, present: true, comment: '코멘트' })),
+    questionFit: '문항 의도에 맞게 답했는지 평가',
+    keywords: ['직무 키워드'],
+    revised: '전체 수정본',
+    ...(deep ? { interviewQuestions: [{ q: '예상 질문', tip: '답변 팁' }] } : {})
+  };
+  const user = `[지원 정보]
+- 회사: ${meta.company || '미입력'}
+- 직무: ${meta.job || '미입력'}
+- 문항: ${meta.question || '미입력'}
+- 글자 수 제한: 공백 포함 ${meta.limit}자 (현재 ${meta.text.length}자)
+
+[자기소개서 원문]
+"""
+${meta.text}
+"""
+
+[작성 규칙]
+1. scores는 0~100 정수. structure=두괄식·STAR 흐름, specificity=수치·구체 사례, jobFit=직무 역량 연결, writing=문장 길이·맞춤법·가독성, authenticity=상투어·과장 없이 본인 이야기인지. total은 종합 점수(0~100 정수).
+2. strengths 2~3개, improvements 3~4개(중요한 순서).
+3. sentences는 고칠 필요가 있는 문장 3~8개. original에는 원문에서 해당 문장을 한 글자도 바꾸지 않고 그대로 복사한다. severity는 "high", "mid", "low" 중 하나.
+4. star는 S(상황)·T(과제)·A(행동)·R(결과) 4개를 이 순서로 쓰고, 원문에 해당 요소가 있으면 present=true.
+5. revised는 문항에 맞춰 다시 쓴 전체 수정본. 반드시 공백 포함 ${meta.limit}자 이하, 가능하면 ${Math.floor(meta.limit * 0.9)}자 이상. 원문에 없는 경험·수치·사실은 지어내지 말고 "[성과 수치]", "[구체적 행동]"처럼 대괄호 빈칸으로 남긴다. 문단은 줄바꿈으로 구분한다.
+6. keywords는 이 직무 자소서에 넣으면 좋은 키워드 5~8개.
+${deep ? '7. interviewQuestions는 이 자소서를 읽은 면접관이 물을 법한 날카로운 질문 5개와 각각의 답변 팁.\n' : ''}모든 텍스트는 자연스러운 한국어로 쓴다.
+
+[출력 형식 — 아래 구조의 JSON만 출력]
+${JSON.stringify(schema, null, 2)}`;
+  return { system, user };
+}
+function normalize(r, deep) {
+  const n = v => Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+  const arr = v => Array.isArray(v) ? v : [];
+  const scores = {};
+  Object.keys(SCORE_LABELS).forEach(k => scores[k] = n(r.scores?.[k]));
+  const avg = Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / 5);
+  const star = 'STAR'.split('').map((key, i) => {
+    const f = arr(r.star).find(s => String(s?.key || '').toUpperCase().startsWith(key)) || arr(r.star)[i] || {};
+    return { key, label: f.label || STAR_LABELS[i], present: f.present === true || f.present === 'true', comment: String(f.comment || '') };
+  });
+  return {
+    total: r.total != null && !isNaN(r.total) ? n(r.total) : avg, scores,
+    summary: String(r.summary || ''),
+    strengths: arr(r.strengths).map(String),
+    improvements: arr(r.improvements).map(String),
+    sentences: arr(r.sentences).filter(s => s && s.original).map(s => {
+      const sev = SEV[s.severity] ? s.severity : SEV_ALIAS[s.severity] || 'mid';
+      return { original: String(s.original), issue: String(s.issue || '개선 필요'), severity: sev, suggestion: String(s.suggestion || ''), reason: String(s.reason || '') };
+    }),
+    star, questionFit: String(r.questionFit || ''),
+    keywords: arr(r.keywords).map(String).slice(0, 10),
+    revised: String(r.revised || ''),
+    interviewQuestions: deep ? arr(r.interviewQuestions).filter(q => q && q.q).map(q => ({ q: String(q.q), tip: String(q.tip || '') })) : []
+  };
+}
+
+/* ============ 데모(규칙 기반) 분석 ============ */
+const CLICHES = [
+  ['어렸을 때부터', '성장 과정은 직무와 직접 연결될 때만 짧게 쓰세요.', 'high'],
+  ['많은 것을 배웠', '무엇을 배웠는지 한 가지로 좁혀 명확히 쓰세요.', 'high'],
+  ['최선을 다', '다짐 대신 과거 행동이나 실행 계획으로 증명하세요.', 'high'],
+  ['노력하겠습니다', '다짐보다 입사 후 실행 계획을 제시하세요.', 'high'],
+  ['열심히', '어떻게 노력했는지 구체적 행동으로 바꿔 쓰세요.', 'mid'],
+  ['책임감', '책임감을 보여 준 구체적 사례로 대신하세요.', 'mid'],
+  ['성실', '성실함을 보여 준 기간·수치로 증명하세요.', 'mid'],
+  ['열정', '열정 대신 몰입한 행동과 결과를 쓰세요.', 'mid'],
+  ['소통', '어떤 방식으로 소통해 무엇을 바꿨는지 쓰세요.', 'mid'],
+  ['기여하고 싶습니다', '어떤 역량으로 어떤 성과에 기여할지 구체화하세요.', 'mid'],
+  ['귀사', '회사명을 직접 쓰는 편이 더 진정성 있어 보입니다.', 'low'],
+  ['항상', '과장된 부사는 신뢰도를 떨어뜨립니다.', 'low']
+];
+const STAR_TIPS = {
+  S: '언제·어디서·어떤 상황이었는지 배경을 한 문장으로 제시하세요.', T: '본인이 맡은 역할과 해결할 과제를 명확히 쓰세요.',
+  A: '본인이 직접 한 행동을 동사 중심으로 구체적으로 쓰세요.', R: '결과를 수치(%, 명, 건 등)로 보여 주세요.'
+};
+const JOB_KEYWORDS = {
+  마케팅: ['데이터 분석', '고객 인사이트', '캠페인 성과', 'A/B 테스트', '퍼포먼스 마케팅', '브랜드 전략'],
+  개발: ['문제 해결', '코드 품질', '협업(Git)', '성능 개선', '테스트', '기술 학습'],
+  영업: ['고객 관계', '목표 달성', '협상', '시장 분석', '신규 거래처', '실적 관리'],
+  기획: ['문제 정의', '데이터 기반 의사결정', '이해관계자 조율', '일정 관리', '사용자 리서치'],
+  디자인: ['사용자 경험', '디자인 시스템', '프로토타이핑', '사용성 테스트', '브랜드 일관성'],
+  인사: ['조직 문화', '채용', '성과 관리', '노무 이해', '구성원 경험'],
+  재무: ['재무 분석', '정확성', '리스크 관리', '예산 관리', '회계 원칙']
+};
+function demoAnalyze(meta, deep) {
+  const text = meta.text;
+  const sents = text.split(/(?<=[.!?])\s+|\n+/).map(s => s.trim()).filter(s => s.length > 4);
+  const fb = []; let cli = 0, longCnt = 0;
+  for (const s of sents) {
+    const hits = CLICHES.filter(([w]) => s.includes(w)); cli += hits.length;
+    if (s.length > 90) longCnt++;
+    if (fb.length >= 8) continue;
+    if (hits.length) {
+      const [w, tip, sev] = hits[0];
+      let sug = s;
+      hits.forEach(([hw]) => { sug = sug.replace(hw, hw === '귀사' ? (meta.company || '[회사명]') : '[구체적 행동·수치]'); });
+      fb.push({ original: s, issue: `상투적 표현 '${w}'`, severity: sev, suggestion: sug, reason: `'${w}'은(는) 많은 지원자가 쓰는 표현이라 변별력이 낮습니다. ${tip}` });
+    } else if (s.length > 90) {
+      const cut = s.indexOf(', ', Math.floor(s.length * 0.3));
+      fb.push({ original: s, issue: '문장이 너무 김', severity: 'mid', suggestion: cut > 0 ? s.slice(0, cut) + '. ' + s.slice(cut + 2) : s, reason: `${s.length}자짜리 문장입니다. 한 문장은 60자 안팎이 읽기 좋으니 두 문장으로 나누세요.` });
+    }
+  }
+  const has = re => re.test(text);
+  const star = [
+    { key: 'S', label: '상황', present: has(/(당시|때|상황|프로젝트|동아리|인턴|아르바이트)/) },
+    { key: 'T', label: '과제', present: has(/(목표|과제|문제|역할|맡아|맡은|어려움|어려운)/) },
+    { key: 'A', label: '행동', present: has(/(분석|제안|기획|진행|개선|도입|설계|운영|시도)/) },
+    { key: 'R', label: '결과', present: has(/(\d+\s?(%|명|배|건|만|원|위)|성과|증가|감소|달성|향상)/) }
+  ].map(s => ({ ...s, comment: s.present ? '관련 서술이 확인됩니다.' : STAR_TIPS[s.key] }));
+  const starCnt = star.filter(s => s.present).length;
+  const hasNum = /\d/.test(text);
+  const jobHit = !!meta.job && text.includes(meta.job);
+  const cl = v => Math.max(30, Math.min(95, Math.round(v)));
+  const scores = {
+    structure: cl(50 + starCnt * 10), specificity: cl((hasNum ? 70 : 45) + (star[3].present ? 10 : 0)),
+    jobFit: cl(jobHit ? 78 : 58), writing: cl(88 - longCnt * 8), authenticity: cl(90 - cli * 6)
+  };
+  const total = Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / 5);
+
+  let revised = text;
+  fb.forEach(f => { revised = revised.replace(f.original, f.suggestion); });
+  if (revised.length > meta.limit) {
+    const cut = revised.slice(0, meta.limit); const end = cut.lastIndexOf('.');
+    revised = end > meta.limit * 0.6 ? cut.slice(0, end + 1) : cut;
+  }
+  const strengths = [];
+  if (hasNum) strengths.push('수치를 활용해 경험을 구체적으로 보여 주려 했습니다.');
+  if (starCnt >= 3) strengths.push('경험이 상황→행동→결과 흐름을 대체로 갖추고 있습니다.');
+  if (jobHit) strengths.push(`'${meta.job}' 직무를 글 안에서 직접 언급했습니다.`);
+  if (text.length >= meta.limit * 0.8) strengths.push('제한 글자 수를 충분히 활용했습니다.');
+  if (!strengths.length) strengths.push('지원 동기와 경험을 함께 담으려는 구성이 좋습니다.');
+  const improvements = [];
+  if (cli) improvements.push(`상투적 표현 ${cli}곳을 구체적 행동·수치로 바꾸세요.`);
+  if (!hasNum) improvements.push('성과를 숫자로 보여 주세요. (예: 팔로워 30% 증가, 참여자 120명)');
+  const missing = star.filter(s => !s.present).map(s => `${s.key}(${s.label})`);
+  if (missing.length) improvements.push(`STAR 중 ${missing.join('·')} 요소가 부족합니다.`);
+  if (longCnt) improvements.push(`90자가 넘는 긴 문장 ${longCnt}개를 나누세요.`);
+  if (!jobHit) improvements.push('지원 직무에 필요한 역량과 본인 경험을 직접 연결하세요.');
+  if (!improvements.length) improvements.push('첫 문장에 핵심 메시지를 두괄식으로 제시해 보세요.');
+  const job = meta.job || '지원 직무';
+  const kwKey = Object.keys(JOB_KEYWORDS).find(k => job.includes(k));
+  return {
+    total, scores,
+    summary: `※ 규칙 기반 데모 분석입니다(실제 AI 아님). 상투어 ${cli}개, 긴 문장 ${longCnt}개, STAR ${starCnt}/4 요소가 확인되었습니다. API 키를 연결하면 문맥을 이해한 실제 AI 첨삭을 받을 수 있습니다.`,
+    strengths: strengths.slice(0, 3), improvements: improvements.slice(0, 4), sentences: fb, star,
+    questionFit: meta.question ? `데모 모드에서는 문항 적합도를 정밀 분석하지 않습니다. "${meta.question}"의 요구 사항(예: 지원 동기·입사 후 포부)에 각각 한 문단씩 답했는지 확인하세요.` : '문항이 입력되지 않았습니다.',
+    keywords: kwKey ? JOB_KEYWORDS[kwKey] : ['문제 해결', '협업', '성과 지표', '주도성', '직무 이해'],
+    revised,
+    interviewQuestions: deep ? [
+      { q: `${job}에 지원한 이유를 1분 안에 말씀해 주세요.`, tip: '자소서의 지원 동기와 일관되게 경험→역량→직무 순서로 답하세요.' },
+      { q: '자소서에 쓴 경험에서 본인이 직접 맡은 역할은 정확히 무엇이었나요?', tip: '팀 성과와 개인 기여를 구분해서 말하세요.' },
+      { q: '그 경험의 결과를 숫자로 말한다면 어떻게 되나요?', tip: '정확한 수치가 없다면 비교 기준(전후·목표 대비)으로 설명하세요.' },
+      { q: '가장 어려웠던 순간과 그것을 어떻게 극복했나요?', tip: '갈등 상황·판단 근거·결과를 짧게 정리해 두세요.' },
+      { q: `입사 후 3년 안에 ${meta.company || '우리 회사'}에서 이루고 싶은 목표는 무엇인가요?`, tip: '회사의 사업 방향과 본인 역량을 연결한 단계별 계획을 말하세요.' }
+    ] : []
+  };
+}
+
+/* ============ 입력 ============ */
+function updateCount() {
+  const t = $('#essay').value; const limit = Math.max(1, parseInt($('#limit').value) || 800);
+  $('#cntWith').textContent = t.length.toLocaleString();
+  $('#cntWithout').textContent = t.replace(/\s/g, '').length.toLocaleString();
+  $('#cntBytes').textContent = [...t].reduce((a, c) => a + (c.charCodeAt(0) > 127 ? 2 : 1), 0).toLocaleString();
+  const bar = $('#limitBar');
+  bar.style.width = Math.min(100, t.length / limit * 100) + '%';
+  bar.className = 'h-full transition-all ' + (t.length > limit ? 'bg-rose-500' : 'bg-indigo-500');
+  $('#cntWith').parentElement.classList.toggle('text-rose-600', t.length > limit);
+}
+$('#essay').addEventListener('input', updateCount);
+$('#limit').addEventListener('input', updateCount);
+$('#essay').addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') analyze(); });
+
+function fillSample() {
+  $('#company').value = '한빛전자'; $('#job').value = '마케팅';
+  $('#question').value = '지원 동기와 입사 후 포부를 기술해 주십시오.'; $('#limit').value = 800;
+  $('#essay').value = `저는 어렸을 때부터 사람들과 소통하는 것을 좋아했고, 항상 새로운 것에 도전하는 열정을 가지고 있습니다.
+
+대학교 3학년 때 교내 마케팅 동아리에서 회장을 맡아 지역 카페와 협업 프로젝트를 진행했습니다. 당시 카페는 SNS 팔로워가 적어 신규 고객 유입이 어려운 상황이었고, 저는 팀원들과 함께 인스타그램 콘텐츠를 기획하고 매주 이벤트를 운영하며 열심히 노력했습니다. 그 결과 많은 것을 배웠고 팀원들과의 협업이 얼마나 중요한지 깨달을 수 있었습니다. 또한 아르바이트를 하면서 고객 응대 경험을 쌓았으며 책임감을 기를 수 있었습니다.
+
+귀사는 국내 가전 시장을 선도하는 기업으로서 고객 중심의 마케팅을 실천하고 있다는 점에서 깊은 인상을 받았습니다. 입사 후에는 제가 가진 소통 능력과 열정을 바탕으로 귀사의 브랜드 가치를 높이는 데 기여하고 싶습니다. 최선을 다해 노력하겠습니다.`;
+  updateCount(); toast('예시를 불러왔습니다.');
+}
+
+/* ============ 첨삭 실행 ============ */
+const LOADING_STEPS = ['문항 의도 분석 중…', '문장을 한 줄씩 읽는 중…', 'STAR 구조 점검 중…', '항목별 점수 계산 중…', '글자 수에 맞춰 수정본 작성 중…', '거의 다 됐어요…'];
+let loadingTimer;
+function startLoading() {
+  let i = 0; $('#loadingText').textContent = LOADING_STEPS[0];
+  loadingTimer = setInterval(() => { i = Math.min(i + 1, LOADING_STEPS.length - 1); $('#loadingText').textContent = LOADING_STEPS[i]; }, 3000);
+}
+
+async function analyze() {
+  const meta = {
+    company: $('#company').value.trim(), job: $('#job').value.trim(), question: $('#question').value.trim(),
+    limit: Math.max(100, parseInt($('#limit').value) || 800), text: $('#essay').value.trim()
+  };
+  if (meta.text.length < 100) return toast('자소서를 100자 이상 입력해 주세요.');
+  if (meta.text.length > 5000) return toast('5,000자 이하로 입력해 주세요.');
+  const deep = document.querySelector('input[name=mode]:checked').value === 'deep';
+  const live = isLive();
+  if (!live && !confirm('API 키가 없어 규칙 기반 데모로 첨삭합니다. 계속할까요?\n\n실제 AI 첨삭을 받으려면 왼쪽 위 "AI API 연결"에 키를 붙여 넣으세요.')) {
+    $('#apiKey').focus(); return;
+  }
+  const btn = $('#analyzeBtn'); btn.disabled = true; btn.textContent = '첨삭 중…';
+  showState('loadingState'); startLoading();
+  try {
+    let result;
+    if (live) {
+      const { system, user } = buildPrompt(meta, deep);
+      result = normalize(parseJSON(await callAI(system, user, true)), deep);
+      if (!result.revised && !result.sentences.length) throw new Error('AI가 빈 결과를 보냈습니다. 다시 시도해 주세요.');
+      verified[ai.provider] = true; updateBadge();
+    } else {
+      await new Promise(r => setTimeout(r, 900));
+      result = demoAnalyze(meta, deep);
+    }
+    const rec = { id: Date.now(), date: new Date().toISOString(), meta, deep, result, engine: live ? `${PROVIDERS[ai.provider].name} · ${curModel()}` : '데모(규칙 기반)' };
+    records.unshift(rec); records = records.slice(0, 30); saveHistory();
+    renderResult(rec); renderHistory();
+  } catch (e) {
+    showState(currentResult ? 'resultState' : 'emptyState');
+    toast('첨삭 실패: ' + e.message, 7000);
+    if (live) { setAIMsg('❌ ' + e.message, 'err'); verified[ai.provider] = false; updateBadge(); }
+  } finally {
+    clearInterval(loadingTimer); btn.disabled = false; btn.textContent = 'AI 첨삭 받기';
+  }
+}
+
+/* ============ 결과 렌더링 ============ */
+function buildHighlighted(text, sents) {
+  const ranges = [];
+  sents.forEach((s, i) => {
+    let q = s.original.trim(); let idx = text.indexOf(q);
+    if (idx < 0) { q = q.replace(/[.!?。]+$/, ''); idx = q.length > 5 ? text.indexOf(q) : -1; }
+    if (idx < 0) return;
+    const end = idx + q.length;
+    if (ranges.some(r => idx < r.end && end > r.start)) return;
+    ranges.push({ start: idx, end, i, sev: s.severity });
+  });
+  ranges.sort((a, b) => a.start - b.start);
+  let out = '', pos = 0;
+  for (const r of ranges) {
+    out += esc(text.slice(pos, r.start)) + `<mark class="hl hl-${r.sev}" data-i="${r.i}">${esc(text.slice(r.start, r.end))}<sup>${r.i + 1}</sup></mark>`;
+    pos = r.end;
+  }
+  return (out + esc(text.slice(pos))).replace(/\n/g, '<br>');
+}
+
+function renderResult(rec, tab = 'sent') {
+  currentResult = rec;
+  const { meta, result: r, deep } = rec;
+  const el = $('#resultState');
+  const revLen = r.revised.length;
+  const c = scoreColor(r.total);
+  el.innerHTML = `
+  <div class="bg-white rounded-2xl border border-slate-200 p-6 fade-in">
+    <div class="flex flex-col sm:flex-row gap-6 items-center">
+      <div class="score-ring w-36 h-36 rounded-full grid place-items-center shrink-0" style="--p:${r.total};--c:${c}">
+        <div class="w-28 h-28 rounded-full bg-white grid place-items-center text-center">
+          <div><div class="text-4xl font-black" style="color:${c}">${r.total}</div><div class="text-xs text-slate-500 font-semibold">${grade(r.total)}등급</div></div>
+        </div>
+      </div>
+      <div class="flex-1 w-full space-y-2">
+        ${Object.entries(SCORE_LABELS).map(([k, l]) => `
+          <div class="flex items-center gap-3 text-sm">
+            <span class="w-16 text-slate-500 font-semibold">${l}</span>
+            <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${r.scores[k]}%;background:${scoreColor(r.scores[k])}"></div></div>
+            <span class="w-8 text-right font-bold">${r.scores[k]}</span>
+          </div>`).join('')}
+        <div class="text-[11px] text-slate-400 pt-1">분석: ${esc(rec.engine)} · ${deep ? '심화' : '기본'} 첨삭 · ${new Date(rec.date).toLocaleString('ko-KR')}</div>
+      </div>
+    </div>
+    <div class="mt-5 bg-slate-50 rounded-xl p-4 text-sm leading-relaxed"><b>총평</b> · ${esc(r.summary)}</div>
+    <div class="grid sm:grid-cols-2 gap-4 mt-4">
+      <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
+        <div class="font-bold text-sm text-emerald-700">👍 잘한 점</div>
+        <ul class="mt-2 space-y-1 text-sm list-disc pl-5">${r.strengths.map(s => `<li>${esc(s)}</li>`).join('')}</ul>
+      </div>
+      <div class="rounded-xl border border-rose-100 bg-rose-50/50 p-4">
+        <div class="font-bold text-sm text-rose-700">🛠 개선할 점</div>
+        <ol class="mt-2 space-y-1 text-sm list-decimal pl-5">${r.improvements.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+      </div>
+    </div>
+    <div class="flex justify-end mt-4">
+      <button onclick="downloadReport()" class="text-xs px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 font-semibold">📄 리포트 저장(TXT)</button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-slate-200 p-6 fade-in">
+    <div class="flex flex-wrap gap-2 mb-5">
+      <button data-tab="sent" class="rtab tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100">문장별 피드백 (${r.sentences.length})</button>
+      <button data-tab="rev" class="rtab tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100">수정본</button>
+      <button data-tab="struct" class="rtab tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100">구조 분석</button>
+      ${deep ? `<button data-tab="intv" class="rtab tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100">면접 예상질문</button>` : ''}
+    </div>
+
+    <div id="tab-sent" class="rpanel">
+      <div class="text-xs text-slate-500 mb-2">원문 하이라이트 — 색칠된 문장을 클릭하면 해당 피드백으로 이동합니다.
+        <span class="ml-2"><mark class="hl hl-high">높음</mark> <mark class="hl hl-mid">보통</mark> <mark class="hl hl-low">낮음</mark></span></div>
+      <div class="bg-slate-50 rounded-xl p-4 text-[15px] leading-8">${buildHighlighted(meta.text, r.sentences)}</div>
+      <div class="space-y-3 mt-5">
+        ${r.sentences.length ? r.sentences.map((s, i) => `
+          <div id="fb-${i}" class="border rounded-xl p-4">
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span class="w-6 h-6 rounded-full bg-slate-900 text-white grid place-items-center font-bold">${i + 1}</span>
+              <span class="px-2 py-0.5 rounded ${SEV[s.severity][1]} font-semibold">중요도 ${SEV[s.severity][0]}</span>
+              <span class="text-slate-500">${esc(s.issue)}</span>
+            </div>
+            <div class="mt-3 text-sm text-slate-500 line-through decoration-rose-300">${esc(s.original)}</div>
+            <div class="mt-1 text-sm font-semibold text-indigo-700">→ ${esc(s.suggestion)}</div>
+            <div class="mt-2 text-xs text-slate-500 bg-slate-50 rounded-lg p-2">💬 ${esc(s.reason)}</div>
+          </div>`).join('') : '<div class="text-sm text-slate-500">지적할 문장이 없습니다. 훌륭해요!</div>'}
+      </div>
+    </div>
+
+    <div id="tab-rev" class="rpanel hidden">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <span class="text-xs ${revLen > meta.limit ? 'text-rose-600 font-semibold' : 'text-slate-500'}">수정본 ${revLen.toLocaleString()}자 / 제한 ${meta.limit.toLocaleString()}자${revLen > meta.limit ? ' · 제한 초과' : ''}</span>
+        <div class="flex gap-2">
+          ${revLen > meta.limit && isLive() ? `<button id="shortenBtn" onclick="shortenRevised()" class="text-xs px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 font-semibold">✂️ 제한에 맞게 줄이기</button>` : ''}
+          <button onclick="copyRevised()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 font-semibold">📋 복사</button>
+          <button onclick="applyRevised()" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold">원문에 반영</button>
+        </div>
+      </div>
+      <div class="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 text-[15px] leading-8 whitespace-pre-wrap">${esc(r.revised || '수정본이 없습니다.')}</div>
+      <p class="text-xs text-slate-400 mt-2">[ ] 표시는 본인의 실제 경험·수치로 채워야 하는 부분입니다.</p>
+    </div>
+
+    <div id="tab-struct" class="rpanel hidden">
+      <div class="text-sm font-bold mb-2">STAR 구조 점검</div>
+      <div class="grid sm:grid-cols-4 gap-3">
+        ${r.star.map(s => `
+          <div class="rounded-xl p-4 border ${s.present ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}">
+            <div class="flex items-center justify-between"><span class="text-2xl font-black ${s.present ? 'text-emerald-600' : 'text-rose-500'}">${esc(s.key)}</span><span>${s.present ? '✅' : '❌'}</span></div>
+            <div class="font-semibold text-sm mt-1">${esc(s.label)}</div>
+            <div class="text-xs text-slate-600 mt-1">${esc(s.comment)}</div>
+          </div>`).join('')}
+      </div>
+      <div class="mt-5 text-sm font-bold">문항 적합도</div>
+      <p class="text-sm text-slate-600 mt-1 bg-slate-50 rounded-xl p-3">${esc(r.questionFit || '-')}</p>
+      <div class="mt-5 text-sm font-bold">추천 직무 키워드</div>
+      <div class="flex flex-wrap gap-2 mt-2">${r.keywords.map(k => `<span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold">#${esc(k)}</span>`).join('')}</div>
+    </div>
+
+    ${deep ? `<div id="tab-intv" class="rpanel hidden space-y-3">
+      ${r.interviewQuestions.length ? r.interviewQuestions.map((q, i) => `
+        <div class="border rounded-xl p-4">
+          <div class="font-semibold text-sm">Q${i + 1}. ${esc(q.q)}</div>
+          <div class="text-xs text-slate-500 mt-2">💡 ${esc(q.tip)}</div>
+        </div>`).join('') : '<div class="text-sm text-slate-500">예상 질문이 생성되지 않았습니다.</div>'}
+    </div>` : ''}
+  </div>`;
+  showState('resultState');
+
+  const switchTab = name => {
+    el.querySelectorAll('.rtab').forEach(x => x.classList.toggle('active', x.dataset.tab === name));
+    el.querySelectorAll('.rpanel').forEach(p => p.classList.toggle('hidden', p.id !== 'tab-' + name));
+  };
+  el.querySelectorAll('.rtab').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+  switchTab(tab);
+  el.querySelectorAll('mark.hl[data-i]').forEach(m => m.addEventListener('click', () => {
+    const card = $('#fb-' + m.dataset.i); if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash');
+  }));
+  if (window.innerWidth < 1024 && tab === 'sent') el.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function shortenRevised() {
+  const rec = currentResult; const btn = $('#shortenBtn');
+  btn.disabled = true; btn.textContent = '줄이는 중…';
+  try {
+    const system = '당신은 자기소개서 편집자입니다. 핵심 사례와 의미를 유지하면서 글자 수를 줄입니다. 결과 본문만 출력합니다.';
+    const user = `아래 글을 공백 포함 ${rec.meta.limit}자 이하(가능하면 ${Math.floor(rec.meta.limit * 0.92)}자 이상)로 줄여 주세요. [ ] 빈칸은 그대로 두고, 설명 없이 본문만 출력하세요.\n\n${rec.result.revised}`;
+    const t = (await callAI(system, user, false)).replace(/```[a-z]*|```/g, '').trim();
+    if (!t) throw new Error('빈 응답입니다.');
+    rec.result.revised = t; saveHistory(); renderResult(rec, 'rev');
+    toast(`수정본을 ${t.length.toLocaleString()}자로 줄였습니다.`);
+  } catch (e) {
+    toast('줄이기 실패: ' + e.message, 6000); btn.disabled = false; btn.textContent = '✂️ 제한에 맞게 줄이기';
+  }
+}
+function copyRevised() {
+  navigator.clipboard.writeText(currentResult.result.revised)
+    .then(() => toast('수정본이 복사되었습니다.'))
+    .catch(() => toast('복사에 실패했습니다. 직접 선택해 복사해 주세요.'));
+}
+function applyRevised() {
+  $('#essay').value = currentResult.result.revised; updateCount();
+  toast('수정본을 원문에 반영했습니다. [ ] 부분을 채운 뒤 다시 첨삭해 보세요.', 4000);
+  $('#essay').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function downloadReport() {
+  const { meta, result: r, deep } = currentResult;
+  const lines = [
+    '[자소서핏 첨삭 리포트]', `일시: ${new Date(currentResult.date).toLocaleString('ko-KR')}`, `분석: ${currentResult.engine}`,
+    `회사/직무: ${meta.company || '-'} / ${meta.job || '-'}`, `문항: ${meta.question || '-'}`, '',
+    `총점: ${r.total}점 (${grade(r.total)}등급)`,
+    ...Object.entries(SCORE_LABELS).map(([k, l]) => `- ${l}: ${r.scores[k]}`), '',
+    '■ 총평', r.summary, '', '■ 잘한 점', ...r.strengths.map(s => '- ' + s), '',
+    '■ 개선할 점', ...r.improvements.map((s, i) => `${i + 1}. ${s}`), '',
+    '■ 문장별 피드백', ...r.sentences.flatMap((s, i) => [`${i + 1}) [${s.issue}] ${s.original}`, `   → ${s.suggestion}`, `   이유: ${s.reason}`]), '',
+    '■ STAR 구조', ...r.star.map(s => `- ${s.key}(${s.label}): ${s.present ? 'O' : 'X'} ${s.comment}`), '',
+    '■ 추천 키워드', r.keywords.map(k => '#' + k).join(' '), '',
+    ...(deep ? ['■ 면접 예상질문', ...r.interviewQuestions.flatMap((q, i) => [`Q${i + 1}. ${q.q}`, `   팁: ${q.tip}`]), ''] : []),
+    '■ 수정본', r.revised, '', '■ 원문', meta.text
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `자소서첨삭_${meta.company || '리포트'}_${new Date().toISOString().slice(0, 10)}.txt`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ============ 기록 ============ */
+function renderHistory() {
+  $('#historyList').innerHTML = records.length ? records.map(h => `
+    <div class="flex items-center hover:bg-slate-50">
+      <button onclick="loadHistory(${h.id})" class="flex-1 min-w-0 flex items-center justify-between gap-3 px-5 py-4 text-left">
+        <div class="min-w-0">
+          <div class="font-semibold text-sm truncate">${esc(h.meta.company || '회사 미입력')} · ${esc(h.meta.job || '직무 미입력')} <span class="text-xs text-slate-400">${h.deep ? '심화' : '기본'} · ${esc(h.engine || '')}</span></div>
+          <div class="text-xs text-slate-400 mt-0.5 truncate">${new Date(h.date).toLocaleString('ko-KR')} · ${esc(h.meta.text.slice(0, 40))}…</div>
+        </div>
+        <div class="text-xl font-black shrink-0" style="color:${scoreColor(h.result.total)}">${h.result.total}<span class="text-xs text-slate-400 ml-1">${grade(h.result.total)}</span></div>
+      </button>
+      <button onclick="deleteHistory(${h.id})" class="px-4 text-slate-300 hover:text-rose-500" title="삭제">✕</button>
+    </div>`).join('') : '<div class="p-8 text-center text-sm text-slate-400">첨삭 기록이 없습니다.</div>';
+}
+function loadHistory(id) {
+  const h = records.find(x => x.id === id); if (!h) return;
+  $('#company').value = h.meta.company; $('#job').value = h.meta.job; $('#question').value = h.meta.question;
+  $('#limit').value = h.meta.limit; $('#essay').value = h.meta.text; updateCount();
+  renderResult(h); window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function deleteHistory(id) {
+  records = records.filter(x => x.id !== id); saveHistory(); renderHistory();
+  if (currentResult?.id === id) { currentResult = null; showState('emptyState'); }
+}
+function clearHistory() {
+  if (!records.length || !confirm('첨삭 기록을 모두 삭제할까요?')) return;
+  records = []; saveHistory(); renderHistory(); currentResult = null; showState('emptyState');
+}
+
+/* ============ 최신 모델만 표시 (2026-11 기준) ============ */
+var LATEST_MODELS = {
+  openai: [
+    ['gpt-6.2-sol',   'GPT-6.2 Sol · 추천 (빠르고 저렴)'],
+    ['gpt-6.2-astra', 'GPT-6.2 Astra · 최고 성능'],
+    ['gpt-6.1-terra', 'GPT-6.1 Terra · 균형'],
+    ['gpt-6-luna',    'GPT-6 Luna · 가장 저렴']
+  ],
+  claude: [
+    ['claude-opus-5-5',   'Claude Opus 5.5 · 추천'],
+    ['claude-fable-5-2',  'Claude Fable 5.2 · 최고 성능'],
+    ['claude-sonnet-5-5', 'Claude Sonnet 5.5 · 빠름'],
+    ['claude-haiku-5-5',  'Claude Haiku 5.5 · 가장 저렴']
+  ],
+  gemini: [
+    ['gemini-4-hydrogen',     'Gemini 4 Hydrogen · 추천'],
+    ['gemini-4-neon',         'Gemini 4 Neon · 고성능 (유료 키)'],
+    ['gemini-4-carbon',       'Gemini 4 Carbon · 최고 성능 (유료 키)'],
+    ['gemini-3.5-flash-lite', 'Gemini 3.5 Flash-Lite · 가장 저렴']
+  ]
+};
+
+(() => {
+  // 기존 코드와 이름이 겹치지 않도록 즉시실행 함수 안에 둠
+  const mInput = $('#model');
+  const mList = $('#modelList');
+  const mSelect = document.createElement('select');
+  mSelect.id = 'modelSelect';
+  mSelect.className = 'flex-1 min-w-0 px-3 py-2 text-sm font-medium text-slate-700 cursor-pointer';
+  mInput.classList.add('hidden');
+  mInput.after(mSelect);
+
+  const provider = () => {
+    const a = document.querySelector('.pbtn.active');
+    if (a && LATEST_MODELS[a.dataset.p]) return a.dataset.p;
+    const k = $('#apiKey').value.trim();
+    if (k.startsWith('sk-ant-')) return 'claude';
+    if (k.startsWith('AIza')) return 'gemini';
+    return 'openai';
+  };
+  const setModel = v => {
+    if (mInput.value === v) return;
+    mInput.value = v;
+    mInput.dispatchEvent(new Event('input', { bubbles: true }));
+    mInput.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  const render = () => {
+    const list = LATEST_MODELS[provider()];
+    const ids = list.map(m => m[0]);
+    if (Array.from(mSelect.options).map(o => o.value).join() !== ids.join())
+      mSelect.innerHTML = list.map(([id, label]) => `<option value="${id}">${label}</option>`).join('');
+    if (Array.from(mList.options).map(o => o.value).join() !== ids.join())
+      mList.innerHTML = ids.map(id => `<option value="${id}"></option>`).join('');
+    const pick = ids.includes(mInput.value) ? mInput.value : ids[0];
+    mSelect.value = pick;
+    setModel(pick);
+  };
+  mSelect.addEventListener('change', () => setModel(mSelect.value));
+
+  // 공급사 전환·목록 갱신 시 항상 최신 모델 목록으로 되돌림
+  const obs = new MutationObserver(render);
+  obs.observe(mList, { childList: true });
+  document.querySelectorAll('.pbtn').forEach(b => obs.observe(b, { attributes: true, attributeFilter: ['class'] }));
+
+  // 연결 확인 전후에도 최신 모델 유지
+  try {
+    const orig = testConnection;
+    testConnection = async function (...args) {
+      render();
+      const r = await orig.apply(this, args);
+      render();
+      return r;
+    };
+  } catch (e) { console.warn('testConnection 래핑 실패', e); }
+
+  /* ============ 초기화 ============ */
+  renderAI(); updateCount(); renderHistory(); render();
+  if (isLive()) { setAIMsg('저장된 키로 연결을 확인하는 중…'); testConnection(true); }
+  else setAIMsg(DEFAULT_MSG);
+})();
+</script>
+</body>
+</html>
